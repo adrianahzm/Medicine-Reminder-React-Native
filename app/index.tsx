@@ -41,7 +41,7 @@ export default function SplashScreen() {
         ]}
       >
         <Ionicons name="logo-react" size={32} color="#fff" />
-        <Text style={styles.appName}> SaludInteligente</Text>
+        <Text style={styles.appName}> SaludInteligentet</Text>
       </Animated.View>
     </View>
   );

@@ -28,11 +28,13 @@ import {
     scheduleMedicationReminder,
 } from "../utils/notifications";
 
+// Obtenemos el ancho de la pantalla del dispositivo
 const { width } = Dimensions.get("window");
 
-// Create animated circle component
+// Creamos un componente animado basado en el componente Circle de SVG
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
+// Definición de acciones rápidas que se mostrarán en la interfaz
 const QUICK_ACTIONS = [
     {
         icon: "add-circle-outline" as const,
@@ -64,23 +66,27 @@ const QUICK_ACTIONS = [
     },
 ];
 
+// Interfaz que define las propiedades del componente de progreso circular
 interface CircularProgressProps {
-    progress: number;
-    totalDoses: number;
-    completedDoses: number;
+    progress: number;        // Valor de progreso (entre 0 y 1)
+    totalDoses: number;      // Total de dosis programadas
+    completedDoses: number;  // Número de dosis completadas
 }
 
+// Componente que muestra un círculo de progreso animado
 function CircularProgress({
     progress,
     totalDoses,
     completedDoses,
 }: CircularProgressProps) {
+    // Valor animado para el progreso
     const animatedValue = useRef(new Animated.Value(0)).current;
-    const size = width * 0.55;
-    const strokeWidth = 15;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = 2 * Math.PI * radius;
+    const size = width * 0.55;          // Tamaño del círculo basado en el ancho de la pantalla
+    const strokeWidth = 15;             // Ancho del trazo
+    const radius = (size - strokeWidth) / 2;  // Radio del círculo
+    const circumference = 2 * Math.PI * radius; // Circunferencia del círculo
 
+    // Animamos el valor cada vez que cambia el progreso
     useEffect(() => {
         Animated.timing(animatedValue, {
             toValue: progress,
@@ -89,6 +95,7 @@ function CircularProgress({
         }).start();
     }, [progress]);
 
+    // Interpolación para calcular el desplazamiento del trazo según el progreso
     const strokeDashoffset = animatedValue.interpolate({
         inputRange: [0, 1],
         outputRange: [circumference, 0],
@@ -96,6 +103,7 @@ function CircularProgress({
 
     return (
         <View style={styles.progressContainer}>
+            {/* Contenedor del texto que muestra el porcentaje y detalles de las dosis */}
             <View style={styles.progressTextContainer}>
                 <Text style={styles.progressPercentage}>
                     {Math.round(progress * 100)}%
@@ -104,7 +112,9 @@ function CircularProgress({
                     {completedDoses} de {totalDoses} dosis
                 </Text>
             </View>
+            {/* SVG que contiene el círculo de fondo y el círculo animado */}
             <Svg width={size} height={size} style={styles.progressRing}>
+                {/* Círculo de fondo */}
                 <Circle
                     cx={size / 2}
                     cy={size / 2}
@@ -113,6 +123,7 @@ function CircularProgress({
                     strokeWidth={strokeWidth}
                     fill="none"
                 />
+                {/* Círculo que muestra el progreso animado */}
                 <AnimatedCircle
                     cx={size / 2}
                     cy={size / 2}
@@ -130,16 +141,19 @@ function CircularProgress({
     );
 }
 
+// Componente principal de la pantalla de inicio
 export default function HomeScreen() {
-    const router = useRouter();
+    const router = useRouter(); // Hook para la navegación
     const [showNotifications, setShowNotifications] = useState(false);
     const [medications, setMedications] = useState<Medication[]>([]);
     const [todaysMedications, setTodaysMedications] = useState<Medication[]>([]);
     const [completedDoses, setCompletedDoses] = useState(0);
     const [doseHistory, setDoseHistory] = useState<DoseHistory[]>([]);
 
+    // Función para cargar los medicamentos y dosis programadas para hoy
     const loadMedications = useCallback(async () => {
         try {
+            // Se obtienen los medicamentos y las dosis de hoy en paralelo
             const [allMedications, todaysDoses] = await Promise.all([
                 getMedications(),
                 getTodaysDoses(),
@@ -148,13 +162,13 @@ export default function HomeScreen() {
             setDoseHistory(todaysDoses);
             setMedications(allMedications);
 
-            // Filter medications for today
+            // Filtra los medicamentos que están activos para el día de hoy
             const today = new Date();
             const todayMeds = allMedications.filter((med) => {
                 const startDate = new Date(med.startDate);
                 const durationDays = parseInt(med.duration.split(" ")[0]);
 
-                // For ongoing medications or if within duration
+                // Se incluyen medicamentos en curso o dentro del periodo de duración
                 if (
                     durationDays === -1 ||
                     (today >= startDate &&
@@ -170,23 +184,24 @@ export default function HomeScreen() {
 
             setTodaysMedications(todayMeds);
 
-            // Calculate completed doses
+            // Calcula el número de dosis que ya han sido tomadas
             const completed = todaysDoses.filter((dose) => dose.taken).length;
             setCompletedDoses(completed);
         } catch (error) {
-            console.error("Error loading medications:", error);
+            console.error("Error cargando los medicamentos:", error);
         }
     }, []);
 
+    // Función para configurar las notificaciones push
     const setupNotifications = async () => {
         try {
             const token = await registerForPushNotificationsAsync();
             if (!token) {
-                console.log("Failed to get push notification token");
+                console.log("No se pudo obtener el token para notificaciones push");
                 return;
             }
 
-            // Schedule reminders for all medications
+            // Programa recordatorios para cada medicamento con notificación habilitada
             const medications = await getMedications();
             for (const medication of medications) {
                 if (medication.reminderEnabled) {
@@ -194,32 +209,33 @@ export default function HomeScreen() {
                 }
             }
         } catch (error) {
-            console.error("Error setting up notifications:", error);
+            console.error("Error configurando las notificaciones:", error);
         }
     };
 
-    // Use useEffect for initial load
+    // useEffect para cargar datos iniciales y configurar notificaciones al iniciar la app
     useEffect(() => {
         loadMedications();
         setupNotifications();
 
-        // Handle app state changes for notifications
+        // Escucha los cambios en el estado de la app para recargar datos al activarse
         const subscription = AppState.addEventListener("change", (nextAppState) => {
             if (nextAppState === "active") {
                 loadMedications();
             }
         });
 
+        // Limpia la suscripción al desmontar el componente
         return () => {
             subscription.remove();
         };
     }, []);
 
-    // Use useFocusEffect for subsequent updates
+    // useFocusEffect para actualizar datos cada vez que la pantalla está en foco
     useFocusEffect(
         useCallback(() => {
             const unsubscribe = () => {
-                // Cleanup if needed
+                // Función de limpieza si es necesario
             };
 
             loadMedications();
@@ -227,22 +243,25 @@ export default function HomeScreen() {
         }, [loadMedications])
     );
 
+    // Función para registrar que se ha tomado una dosis de un medicamento
     const handleTakeDose = async (medication: Medication) => {
         try {
             await recordDose(medication.id, true, new Date().toISOString());
-            await loadMedications(); // Reload data after recording dose
+            await loadMedications(); // Recarga los datos después de registrar la dosis
         } catch (error) {
-            console.error("Error recording dose:", error);
-            Alert.alert("Error", "Failed to record dose. Please try again.");
+            console.error("Error al registrar la dosis:", error);
+            Alert.alert("Error", "Error al registrar la dosis. Por favor, inténtalo de nuevo.");
         }
     };
 
+    // Verifica si ya se tomó la dosis para un medicamento en específico
     const isDoseTaken = (medicationId: string) => {
         return doseHistory.some(
             (dose) => dose.medicationId === medicationId && dose.taken
         );
     };
 
+    // Calcula el progreso del día basado en las dosis programadas y las completadas
     const progress =
         todaysMedications.length > 0
             ? completedDoses / (todaysMedications.length * 2)
@@ -250,6 +269,7 @@ export default function HomeScreen() {
 
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+            {/* Encabezado con gradiente y barra de progreso */}
             <LinearGradient colors={["#53c89b", "#11263d"]} style={styles.header}>
                 <View style={styles.headerContent}>
                     <View style={styles.headerTop}>
@@ -270,6 +290,7 @@ export default function HomeScreen() {
                             )}
                         </TouchableOpacity>
                     </View>
+                    {/* Componente que muestra el progreso circular */}
                     <CircularProgress
                         progress={progress}
                         totalDoses={todaysMedications.length * 2}
@@ -278,6 +299,7 @@ export default function HomeScreen() {
                 </View>
             </LinearGradient>
 
+            {/* Sección de Acciones Rápidas */}
             <View style={styles.content}>
                 <View style={styles.quickActionsContainer}>
                     <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
@@ -302,6 +324,7 @@ export default function HomeScreen() {
                     </View>
                 </View>
 
+                {/* Sección del Horario de hoy */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Horario de hoy</Text>
@@ -378,6 +401,7 @@ export default function HomeScreen() {
                 </View>
             </View>
 
+            {/* Modal para mostrar las notificaciones */}
             <Modal
                 visible={showNotifications}
                 animationType="slide"

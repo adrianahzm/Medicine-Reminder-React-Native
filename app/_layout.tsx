@@ -16,6 +16,7 @@ export default function RootLayout() {
       }}>
         {/* Pantalla principal (index) */}
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="medications/add" options={{ headerShown: false, headerBackTitle: "", title: "" }} />
 
         {/* Pantalla de autenticación (auth) */}
         <Stack.Screen name="auth" />
