@@ -50,7 +50,7 @@ export default function AuthScreen() {
       });
 
       if (auth.success) {
-        router.replace("/"); // Si la autenticación es exitosa, redirige a la pantalla principal
+        router.replace("/home"); // Si la autenticación es exitosa, redirige a home
       } else {
         setError("Error en la Autenticación: Por favor, intenta de nuevo"); // Si falla, muestra un error
       }
@@ -69,12 +69,12 @@ export default function AuthScreen() {
         <View style={styles.iconContainer}>
           <Ionicons name="medical" size={80} color="white" />
         </View>
-        <Text style={styles.title}>MedRemind</Text>
-        <Text style={styles.subtitle}>Your personal medical reminder</Text>
+        <Text style={styles.title}>SaludInteligente</Text>
+        <Text style={styles.subtitle}>Su recordatorio médico personal</Text>
 
         {/* Tarjeta de autenticación */}
         <View style={styles.card}>
-          <Text style={styles.welcomeText}>Welcome Back</Text>
+          <Text style={styles.welcomeText}>Bienvenido de nuevo</Text>
           <Text style={styles.instructionText}>
             {hasBiometrics ? "Usa FaceId/TouchID" : "Ingresa tu PIN para acceder"}
           </Text>
@@ -92,7 +92,7 @@ export default function AuthScreen() {
               style={styles.buttonIcon}
             />
             <Text style={styles.buttonText}>
-              {isAuthenticating ? "Verificando..." : hasBiometrics ? "Authenticate" : "Ingresa tu PIN"}
+              {isAuthenticating ? "Verificando..." : hasBiometrics ? "Autenticar" : "Ingresa tu PIN"}
             </Text>
           </TouchableOpacity>
 
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 18,
-    color: "rgba(0, 0, 0, 0.9)",
+    color: "rgb(255, 255, 255)",
     marginBottom: 40,
     textAlign: "center",
   },
