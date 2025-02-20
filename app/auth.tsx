@@ -6,94 +6,110 @@ import {
   TouchableOpacity,
   Dimensions,
 } from "react-native";
-import { useRouter } from "expo-router";
-import * as LocalAuthentication from "expo-local-authentication";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router"; // Importa el enrutador de Expo para la navegación
+import * as LocalAuthentication from "expo-local-authentication"; // Importa la autenticación biométrica
+import { Ionicons } from "@expo/vector-icons"; // Importa los iconos de Ionicons
+import { LinearGradient } from "expo-linear-gradient"; // Importa el gradiente de Expo
 
-const { width } = Dimensions.get("window");
-
+const { width } = Dimensions.get("window"); // Obtiene el ancho de la pantalla del dispositivo
 
 export default function AuthScreen() {
-  const [hasBiometrics, setHasBiometrics] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const [hasBiometrics, setHasBiometrics] = useState(false); // Estado para saber si el dispositivo soporta biometría
+  const [isAuthenticating, setIsAuthenticating] = useState(false); // Estado para saber si se está autenticando
+  const [error, setError] = useState<string | null>(null); // Estado para manejar errores de autenticación
+  const router = useRouter(); // Hook para la navegación
 
+  // Se ejecuta una vez cuando el componente se monta
   useEffect(() => {
     checkBiometrics();
   }, []);
 
-
+  // Función para verificar si el dispositivo tiene hardware biométrico y si el usuario está registrado
   const checkBiometrics = async () => {
     const hasHardware = await LocalAuthentication.hasHardwareAsync();
     const isEnrolled = await LocalAuthentication.isEnrolledAsync();
     setHasBiometrics(hasHardware && isEnrolled);
-  }
+  };
 
+  // Función para autenticar al usuario
   const authenticate = async () => {
     try {
-      setIsAuthenticating(true);
-      setError(null);
+      setIsAuthenticating(true); // Se inicia el estado de autenticación
+      setError(null); // Se limpia cualquier error previo
 
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync;
 
-      //handle supportedtypes
+      // Inicia la autenticación biométrica o con PIN
       const auth = await LocalAuthentication.authenticateAsync({
-        promptMessage: hasHardware && hasBiometrics ? 'Usa FaceId/TouchID' : 'Ingresa tu PIN para acceder',
-        fallbackLabel: 'Usar PIN',
-        cancelLabel: 'Cancelar',
+        promptMessage: hasHardware && hasBiometrics ? "Usa FaceId/TouchID" : "Ingresa tu PIN para acceder",
+        fallbackLabel: "Usar PIN",
+        cancelLabel: "Cancelar",
         disableDeviceFallback: false,
       });
+
       if (auth.success) {
-        router.replace('/')
+        router.replace("/"); // Si la autenticación es exitosa, redirige a la pantalla principal
       } else {
-        setError('Error en la Autentificación: Por favor, intenta de nuevo')
+        setError("Error en la Autenticación: Por favor, intenta de nuevo"); // Si falla, muestra un error
       }
-    } catch (error) { }
-  }
+    } catch (error) {
+      setError("Ocurrió un error inesperado");
+    } finally {
+      setIsAuthenticating(false); // Finaliza el estado de autenticación
+    }
+  };
 
   return (
+    // Fondo con gradiente
     <LinearGradient colors={["#53c89b", "#11263d"]} style={styles.container}>
       <View style={styles.content}>
+        {/* Icono principal */}
         <View style={styles.iconContainer}>
           <Ionicons name="medical" size={80} color="white" />
         </View>
         <Text style={styles.title}>MedRemind</Text>
-        <Text style={styles.subtitle} >Your personal medical reminder</Text>
+        <Text style={styles.subtitle}>Your personal medical reminder</Text>
 
+        {/* Tarjeta de autenticación */}
         <View style={styles.card}>
           <Text style={styles.welcomeText}>Welcome Back</Text>
           <Text style={styles.instructionText}>
-            {hasBiometrics
-              ? "Usa FaceId/TouchID"
-              : "Ingresa tu PIN para acceder"}
+            {hasBiometrics ? "Usa FaceId/TouchID" : "Ingresa tu PIN para acceder"}
           </Text>
-          <TouchableOpacity style={[styles.button, isAuthenticating && styles.buttonDisabled]}
+
+          {/* Botón de autenticación */}
+          <TouchableOpacity
+            style={[styles.button, isAuthenticating && styles.buttonDisabled]}
             onPress={authenticate}
             disabled={isAuthenticating}
           >
             <Ionicons
-              name={hasBiometrics ? "finger-print-outline" : "keypad-outline"} size={24} color={"#fff"} style={styles.buttonIcon}
+              name={hasBiometrics ? "finger-print-outline" : "keypad-outline"}
+              size={24}
+              color={"#fff"}
+              style={styles.buttonIcon}
             />
             <Text style={styles.buttonText}>
-              {isAuthenticating ? 'Verificando...' : hasBiometrics ? "Authenticate" : "Ingresa tu PIN"}
+              {isAuthenticating ? "Verificando..." : hasBiometrics ? "Authenticate" : "Ingresa tu PIN"}
             </Text>
           </TouchableOpacity>
-          {error && <View style={styles.errorContainer}>
-            <Ionicons name="alert-circle" size={20} color={"#f44336"} />
-            <Text style={styles.errorText}>
-              {error}
-            </Text>
-          </View>}
+
+          {/* Mensaje de error */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Ionicons name="alert-circle" size={20} color={"#f44336"} />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
         </View>
       </View>
     </LinearGradient>
   );
 }
 
+// Estilos del componente
 const styles = StyleSheet.create({
   container: {
     flex: 1,
