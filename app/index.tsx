@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Animated } from "react-native";
+import { View, Text, StyleSheet, Animated, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import { useRouter } from "expo-router";
@@ -24,7 +24,11 @@ export default function SplashScreen() {
     ]).start();
 
     const timer = setTimeout(() => {
-      router.replace("/auth");
+      if (Platform.OS === "web") {
+        router.replace("/landing"); // Redirige a la landing en web
+      } else {
+        router.replace("/auth"); // Redirige a auth en móvil
+      }
     }, 2000);
     return () => clearTimeout(timer);
   }, []);
